@@ -1,20 +1,60 @@
+use bson::DateTime;
 use leptos::*;
 use leptos_router::*;
 use reqwest;
+use serde::{Deserialize, Serialize};
 use serde_json;
 
-async fn get_all_node_data(node_name: &str) -> serde_json::Value {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RapiStruct {
+    node_val: String,
+    node_last_update: DateTime,
+    node_name: String,
+    node_rw_direction: String,
+    node_uid: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+
+struct MqttStruct {
+    mqtt_lock_to_uid: String,
+    mqtt_ip: String,
+    mqtt_topic: String,
+    mqtt_topic_modif: i32,
+    mqtt_rw: String,
+}
+#[derive(Debug, Serialize, Deserialize)]
+
+struct ModbusStruct {
+    mb_lock_to_uid: String,
+    mb_ip: String,
+    mb_port: String,
+    mb_register: String,
+    mb_rw: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+
+struct NewUidGet {
+    uid: String,
+}
+
+async fn get_all_node_data(node_name: &str) -> String {
     let mut get_url = "http://127.0.0.1:8000/getall/".to_string();
     get_url.push_str(&node_name);
 
-    let resp = reqwest::get(get_url)
-        .await
-        .unwrap()
-        .json::<serde_json::Value>()
-        .await
-        .unwrap();
+    let resp = reqwest::get(get_url).await.unwrap().text().await.unwrap();
 
     resp
+}
+
+async fn crt_new_uid(_count: i32) -> String {
+    let get_url = "http://127.0.0.1:8000/c/".to_string();
+
+    let resp: NewUidGet = reqwest::get(get_url).await.unwrap().json().await.unwrap();
+    log!("{resp:?}");
+
+    resp.uid
 }
 
 #[component]
@@ -144,29 +184,137 @@ fn DataNodeData(cx: Scope) -> impl IntoView {
         "mqtt" => "mqttstuff",
         _ => "",
     };
+
+    let id_for_later = dnode_descr;
+
     let async_data = create_resource(
         cx,
         || (),
-        move |_| async move {
-            log!("loading data from API");
-            get_all_node_data(dnode_descr).await
-        },
+        move |_| async move { get_all_node_data(dnode_descr).await },
     );
-
-    let async_value = async_data;
 
     view! { cx,
         <div class="contact-info">
-        <p> {}  </p>
+        <p>    {move || match async_data.read(cx) {
+            None => view! { cx, <p>"Loading..."</p> }.into_view(cx),
+            Some(data) => view! { cx, <ShowData data id_for_later/>  }.into_view(cx)
+        }}  </p>
+        </div>
+    }
+}
+
+#[component]
+fn ShowData(cx: Scope, data: String, id_for_later: &'static str) -> impl IntoView {
+    if id_for_later == "mbstuff" {
+        let vect_data_mb: Vec<ModbusStruct> = serde_json::from_str(&data).unwrap();
+        let mapped_view = vect_data_mb
+            .into_iter()
+            .map(|mbstruct| {
+                view! { cx,
+                    <ShowMbSingleData mbstruct/>
+                }
+            })
+            .collect::<Vec<_>>();
+        view! { cx,
+            <div>{mapped_view}</div>
+        }
+    } else if id_for_later == "mqttstuff" {
+        let vect_data_mqtt: Vec<MqttStruct> = serde_json::from_str(&data).unwrap();
+        let mapped_view = vect_data_mqtt
+            .into_iter()
+            .map(|mqttstruct| {
+                view! { cx,
+                    <ShowMqttSingleData mqttstruct/>
+                }
+            })
+            .collect::<Vec<_>>();
+        view! { cx,
+            <div>{mapped_view}</div>
+        }
+    } else if id_for_later == "bucket" {
+        let vect_data_rapi: Vec<RapiStruct> = serde_json::from_str(&data).unwrap();
+        let mapped_view = vect_data_rapi
+            .into_iter()
+            .map(|rapistruct| {
+                view! { cx,
+                    <ShowRapiSingleData rapistruct/>
+                }
+            })
+            .collect::<Vec<_>>();
+        view! { cx,
+            <div>{mapped_view}</div>
+        }
+    } else {
+        view! { cx,
+            <div>"No map"</div>
+        }
+    }
+}
+
+#[component]
+fn ShowMbSingleData(cx: Scope, mbstruct: ModbusStruct) -> impl IntoView {
+    view! { cx,
+        <div class="mb_data_single">
+            <p> "locked to data node: "{mbstruct.mb_lock_to_uid} </p>
+            <p> "mb ip: " {mbstruct.mb_ip} </p>
+            <p> "mb port: " {mbstruct.mb_port} </p>
+            <p> "mb register: " {mbstruct.mb_register} </p>
+            <p> "mb read/write: " {mbstruct.mb_rw} </p>
+        </div>
+    }
+}
+
+#[component]
+fn ShowMqttSingleData(cx: Scope, mqttstruct: MqttStruct) -> impl IntoView {
+    view! { cx,
+        <div class="mqtt_data_single">
+            <p> "locked to data node: "{mqttstruct.mqtt_lock_to_uid} </p>
+            <p> "mqtt ip: " {mqttstruct.mqtt_ip} </p>
+            <p> "mqtt topic: " {mqttstruct.mqtt_topic} </p>
+            <p> "mqtt topic modifier: " {mqttstruct.mqtt_topic_modif} </p>
+            <p> "mqtt read/write: " {mqttstruct.mqtt_rw} </p>
+        </div>
+    }
+}
+
+#[component]
+fn ShowRapiSingleData(cx: Scope, rapistruct: RapiStruct) -> impl IntoView {
+    view! { cx,
+        <div class="rapi_data_single">
+            <p> "Data node uid: " {rapistruct.node_uid} </p>
+            <p> "Data node value: "{rapistruct.node_val} </p>
+            <p> "Data node last updated: " {rapistruct.node_last_update.to_string()} </p>
+            <p> "Data node name: " {rapistruct.node_name} </p>
+            <p> "Data node read/write ? : " {rapistruct.node_rw_direction} </p>
         </div>
     }
 }
 
 #[component]
 fn NewRapiNode(cx: Scope) -> impl IntoView {
+    let (count, set_count) = create_signal(cx, 1);
+    let async_data = create_resource(cx, move || count.get(), crt_new_uid);
+
+    let async_result = move || {
+        async_data
+            .read(cx)
+            .map(|value| format!("Server returned {value:?}"))
+            // This loading state will only show before the first load
+            .unwrap_or_else(|| "Loading...".into())
+    };
+
     view! { cx,
         <div class="new_node">
-            "Test rest api new node"
+        <button on:click= move |_| {
+            set_count.update(|n| *n += 1);
+        }
+        // the class: syntax reactively updates a single class
+        // here, we'll set the `red` class when `count` is odd
+        class:btn_disabled=move || { count.get() > 1 }
+    >
+        "Click me"
+          </button>
+            {async_result}
         </div>
     }
 }

@@ -10,3 +10,5 @@ leptos = { version = "0.4.8", features = ["csr"] }
 leptos_router = { version = "0.4.10", features = ["csr"] }
 reqwest = { version = "*", features = ["json"] }
 serde_json = "*"
+serde = "1.0.188"
+bson = "2.7.0"

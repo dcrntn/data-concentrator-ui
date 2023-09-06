@@ -1,4 +1,6 @@
 use bson::DateTime;
+use leptos::ev::SubmitEvent;
+use leptos::html::{Input, Select};
 use leptos::*;
 use leptos_router::*;
 use reqwest;
@@ -48,13 +50,19 @@ async fn get_all_node_data(node_name: &str) -> String {
     resp
 }
 
-async fn crt_new_uid(_count: i32) -> String {
-    let get_url = "http://127.0.0.1:8000/c/".to_string();
+async fn crt_new_uid(count: i32) -> String {
+    let mut _to_ret = String::from("");
+    if count == 1 {
+        let get_url = "http://127.0.0.1:8000/c/".to_string();
 
-    let resp: NewUidGet = reqwest::get(get_url).await.unwrap().json().await.unwrap();
-    log!("{resp:?}");
+        let resp: NewUidGet = reqwest::get(get_url).await.unwrap().json().await.unwrap();
+        _to_ret = resp.uid;
+    } else {
+        // Not the best method but might do the trick for now
+        _to_ret = String::from("");
+    }
 
-    resp.uid
+    _to_ret
 }
 
 #[component]
@@ -62,21 +70,15 @@ fn App(cx: Scope) -> impl IntoView {
     view! { cx,
         <Router>
             <h1>"Data concentrator UI"</h1>
-            // this <nav> will show on every routes,
-            // because it's outside the <Routes/>
-            // note: we can just use normal <a> tags
-            // and the router will use client-side navigation
             <nav>
                 <a href="/">"Home"</a>
                 <a href="/dmap">"Data Map"</a>
             </nav>
             <main>
                 <Routes>
-                    // / just has an un-nested "Home"
                     <Route path="/" view=|cx| view! { cx,
                         <h3>"Home"</h3>
                     }/>
-                    // /contacts has nested routes
                     <Route
                         path="/dmap"
                         view=|cx| view! { cx, <DataNodeList/> }
@@ -130,7 +132,6 @@ fn DataNodeInfo(cx: Scope) -> impl IntoView {
     let params = use_params_map(cx);
     let id = move || params.with(|params| params.get("id").cloned().unwrap_or_default());
 
-    // imagine we're loading data from an API here
     let name = move || match id().as_str() {
         "rapi" => "REST API",
         "mbtcp" => "Modbus TCP",
@@ -292,29 +293,88 @@ fn ShowRapiSingleData(cx: Scope, rapistruct: RapiStruct) -> impl IntoView {
 
 #[component]
 fn NewRapiNode(cx: Scope) -> impl IntoView {
-    let (count, set_count) = create_signal(cx, 1);
+    let (count, set_count) = create_signal(cx, 0);
     let async_data = create_resource(cx, move || count.get(), crt_new_uid);
 
-    let async_result = move || {
-        async_data
-            .read(cx)
-            .map(|value| format!("Server returned {value:?}"))
-            // This loading state will only show before the first load
-            .unwrap_or_else(|| "Loading...".into())
-    };
+    let async_result = move || async_data.read(cx).unwrap_or_else(|| "Loading...".into());
 
     view! { cx,
         <div class="new_node">
         <button on:click= move |_| {
             set_count.update(|n| *n += 1);
         }
-        // the class: syntax reactively updates a single class
-        // here, we'll set the `red` class when `count` is odd
-        class:btn_disabled=move || { count.get() > 1 }
+        class:btn_disabled=move || { count.get() > 0 }
     >
         "Click me"
           </button>
-            {async_result}
+            <Show
+            when=move || { count.get() > 0 }
+            fallback=|_cx| view! { _cx, <p> "Generate new uid to make a new datanode!"</p> }
+          >
+            <NewRapiForm uid=async_result()/>
+          </Show>
+        </div>
+    }
+}
+
+#[component]
+fn NewRapiForm(cx: Scope, uid: String) -> impl IntoView {
+    let input_element_name: NodeRef<Input> = create_node_ref(cx);
+    let input_element_default_value: NodeRef<Input> = create_node_ref(cx);
+
+    let select_element_rw: NodeRef<Select> = create_node_ref(cx);
+
+    let uid_tmp = uid.clone();
+
+    let on_submit = move |ev: SubmitEvent| {
+        ev.prevent_default();
+
+        let value_name = input_element_name.get().expect("<input> to exist").value();
+        let value_default_value = input_element_default_value
+            .get()
+            .expect("<input> to exist")
+            .value();
+
+        let value_rw = select_element_rw.get().expect("<select> to exist").value();
+        log!("{value_name}");
+        log!("{value_default_value}");
+
+        log!("{uid_tmp}");
+        log!("{value_rw}");
+    };
+    view! { cx,
+        <div class="new_node_form">
+            <form on:submit=on_submit>
+            "Generated uid: "
+            <span>{uid} </span>
+            <br/>
+
+            "Data node name: "
+            <input type="text"
+                node_ref=input_element_name
+            />
+
+            <br/>
+
+            "Data node default value: "
+            <input type="text"
+                node_ref=input_element_default_value
+            />
+
+            <br/>
+
+            "Data node read/write: "
+            <select
+                node_ref=select_element_rw
+            >
+            <option value="r">r</option>
+            <option value="w">w</option>
+            <option value="rw">rw</option>
+            </select>
+
+            <br/>
+            <input type="submit" value="Submit"/>
+        </form>
         </div>
     }
 }

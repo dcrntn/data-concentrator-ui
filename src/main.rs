@@ -4,7 +4,6 @@ use leptos::html::{Input, Select};
 use leptos::*;
 use leptos_router::*;
 use reqwest;
-use reqwest::header::{HeaderValue, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
 use serde_json;
 

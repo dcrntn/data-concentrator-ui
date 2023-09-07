@@ -4,11 +4,12 @@ use leptos::html::{Input, Select};
 use leptos::*;
 use leptos_router::*;
 use reqwest;
+use reqwest::header::{HeaderValue, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
 use serde_json;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RapiStruct {
+struct RapiStruct {
     node_val: String,
     node_last_update: DateTime,
     node_name: String,
@@ -39,6 +40,14 @@ struct ModbusStruct {
 
 struct NewUidGet {
     uid: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct UpdateData {
+    node_val: String,
+    node_name: String,
+    node_rw_direction: String,
+    node_uid: String,
 }
 
 async fn get_all_node_data(node_name: &str) -> String {
@@ -317,6 +326,20 @@ fn NewRapiNode(cx: Scope) -> impl IntoView {
     }
 }
 
+async fn post_data_update(url: &str, hmap: UpdateData) {
+    let json_data = &serde_json::json!(hmap);
+    let rw_client = reqwest::Client::new();
+    let _res = rw_client
+        .post(url)
+        .fetch_mode_no_cors()
+        .json(json_data)
+        .header("Content-Type", "application/json")
+        .send()
+        .await
+        .unwrap();
+    log!("{_res:?}");
+}
+
 #[component]
 fn NewRapiForm(cx: Scope, uid: String) -> impl IntoView {
     let input_element_name: NodeRef<Input> = create_node_ref(cx);
@@ -336,12 +359,19 @@ fn NewRapiForm(cx: Scope, uid: String) -> impl IntoView {
             .value();
 
         let value_rw = select_element_rw.get().expect("<select> to exist").value();
-        log!("{value_name}");
-        log!("{value_default_value}");
 
-        log!("{uid_tmp}");
-        log!("{value_rw}");
+        let update = UpdateData {
+            node_val: value_default_value,
+            node_name: value_name,
+            node_rw_direction: value_rw,
+            node_uid: uid_tmp.clone(),
+        };
+
+        spawn_local(async move {
+            post_data_update("http://127.0.0.1:8000/u", update).await;
+        });
     };
+
     view! { cx,
         <div class="new_node_form">
             <form on:submit=on_submit>

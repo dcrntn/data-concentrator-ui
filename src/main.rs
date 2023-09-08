@@ -1,9 +1,14 @@
+use std::collections::HashMap;
+
 use bson::DateTime;
 use leptos::ev::SubmitEvent;
 use leptos::html::{Input, Select};
 use leptos::*;
 use leptos_router::*;
 use reqwest;
+use reqwest::header::{
+    HeaderMap, HeaderValue, ACCEPT, ACCESS_CONTROL_ALLOW_ORIGIN, CONTENT_TYPE, USER_AGENT,
+};
 use serde::{Deserialize, Serialize};
 use serde_json;
 
@@ -22,7 +27,7 @@ struct MqttStruct {
     mqtt_lock_to_uid: String,
     mqtt_ip: String,
     mqtt_topic: String,
-    mqtt_topic_modif: i32,
+    mqtt_topic_modif: String,
     mqtt_rw: String,
 }
 #[derive(Debug, Serialize, Deserialize)]
@@ -39,14 +44,6 @@ struct ModbusStruct {
 
 struct NewUidGet {
     uid: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct UpdateData {
-    node_val: String,
-    node_name: String,
-    node_rw_direction: String,
-    node_uid: String,
 }
 
 async fn get_all_node_data(node_name: &str) -> String {
@@ -71,6 +68,42 @@ async fn crt_new_uid(count: i32) -> String {
     }
 
     _to_ret
+}
+
+async fn post_data(url: &str, hmap: HashMap<&str, String>) -> String {
+    fn construct_headers() -> HeaderMap {
+        let mut headers = HeaderMap::new();
+        headers.insert(USER_AGENT, HeaderValue::from_static("reqwest"));
+        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
+        headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
+        headers.insert(ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue::from_static("*"));
+        headers
+    }
+
+    let form_url = format!("{url}");
+    let rw_client = reqwest::Client::new();
+    let res = rw_client
+        .post(form_url)
+        .json(&hmap)
+        .headers(construct_headers())
+        .send()
+        .await;
+
+    let mut ret_val = String::new();
+
+    match res {
+        Ok(resp_in) => {
+            log!("{resp_in:?}");
+            if resp_in.status() == 200 {
+                ret_val = String::from("200");
+            }
+        }
+        Err(err) => {
+            log!("{err:?}");
+            ret_val = String::from("500");
+        }
+    };
+    ret_val
 }
 
 #[component]
@@ -313,34 +346,20 @@ fn NewRapiNode(cx: Scope) -> impl IntoView {
         }
         class:btn_disabled=move || { count.get() > 0 }
     >
-        "Click me"
+        "Generate new UID"
           </button>
             <Show
             when=move || { count.get() > 0 }
             fallback=|_cx| view! { _cx, <p> "Generate new uid to make a new datanode!"</p> }
           >
-            <NewRapiForm uid=async_result()/>
+            <NewRapiForm uid=async_result() scount=set_count/>
           </Show>
         </div>
     }
 }
 
-async fn post_data_update(url: &str, hmap: UpdateData) {
-    let json_data = &serde_json::json!(hmap);
-    let rw_client = reqwest::Client::new();
-    let _res = rw_client
-        .post(url)
-        .fetch_mode_no_cors()
-        .json(json_data)
-        .header("Content-Type", "application/json")
-        .send()
-        .await
-        .unwrap();
-    log!("{_res:?}");
-}
-
 #[component]
-fn NewRapiForm(cx: Scope, uid: String) -> impl IntoView {
+fn NewRapiForm(cx: Scope, uid: String, scount: WriteSignal<i32>) -> impl IntoView {
     let input_element_name: NodeRef<Input> = create_node_ref(cx);
     let input_element_default_value: NodeRef<Input> = create_node_ref(cx);
 
@@ -358,16 +377,19 @@ fn NewRapiForm(cx: Scope, uid: String) -> impl IntoView {
             .value();
 
         let value_rw = select_element_rw.get().expect("<select> to exist").value();
-
-        let update = UpdateData {
-            node_val: value_default_value,
-            node_name: value_name,
-            node_rw_direction: value_rw,
-            node_uid: uid_tmp.clone(),
-        };
+        let mut map = HashMap::new();
+        map.insert("node_val", value_default_value);
+        map.insert("node_uid", uid_tmp.clone());
+        map.insert("node_rw_direction", value_rw);
+        map.insert("node_name", value_name);
 
         spawn_local(async move {
-            post_data_update("http://127.0.0.1:8000/u", update).await;
+            let resp = post_data("http://127.0.0.1:8000/u", map).await;
+            if resp == "200".to_string() {
+                scount.set(0);
+            } else {
+                log!("Error on server side, needs better handler later!");
+            }
         });
     };
 
@@ -396,9 +418,9 @@ fn NewRapiForm(cx: Scope, uid: String) -> impl IntoView {
             <select
                 node_ref=select_element_rw
             >
+            <option value="rw">rw</option>
             <option value="r">r</option>
             <option value="w">w</option>
-            <option value="rw">rw</option>
             </select>
 
             <br/>
@@ -410,18 +432,175 @@ fn NewRapiForm(cx: Scope, uid: String) -> impl IntoView {
 
 #[component]
 fn NewMbtcpNode(cx: Scope) -> impl IntoView {
+    let input_element_ip: NodeRef<Input> = create_node_ref(cx);
+    let input_element_port: NodeRef<Input> = create_node_ref(cx);
+
+    let select_element_rw: NodeRef<Select> = create_node_ref(cx);
+
+    let input_element_lock_to_uid: NodeRef<Input> = create_node_ref(cx);
+    let input_element_register: NodeRef<Input> = create_node_ref(cx);
+
+    let on_submit = move |ev: SubmitEvent| {
+        ev.prevent_default();
+
+        let value_ip = input_element_ip.get().expect("<input> to exist").value();
+        let value_port = input_element_port.get().expect("<input> to exist").value();
+        let value_lock_to_uid = input_element_lock_to_uid
+            .get()
+            .expect("<input> to exist")
+            .value();
+        let value_register = input_element_register
+            .get()
+            .expect("<input> to exist")
+            .value();
+
+        let value_rw = select_element_rw.get().expect("<select> to exist").value();
+        let mut map = HashMap::new();
+
+        map.insert("mb_lock_to_uid", value_lock_to_uid);
+        map.insert("mb_ip", value_ip);
+        map.insert("mb_port", value_port);
+        map.insert("mb_rw", value_rw);
+        map.insert("mb_register", value_register);
+
+        spawn_local(async move {
+            let resp = post_data("http://127.0.0.1:8000/cmbtcp", map).await;
+            if resp == "200".to_string() {
+            } else {
+                log!("Error on server side, needs better handler later!");
+            }
+        });
+    };
+
     view! { cx,
-        <div class="new_node">
-            "MB TCP"
+        <div class="new_node_form">
+            <form on:submit=on_submit>
+            "Mb lock to uid: "
+            <input type="text"
+            node_ref=input_element_lock_to_uid
+        />
+            <br/>
+
+            "Mb IP: "
+            <input type="text"
+                node_ref=input_element_ip
+            />
+
+            <br/>
+
+            "Mb port: "
+            <input type="text"
+                node_ref=input_element_port
+            />
+
+            <br/>
+
+            "Mb register: "
+            <input type="text"
+                node_ref=input_element_register
+            />
+
+            <br/>
+
+            "Mb read/write: "
+            <select
+                node_ref=select_element_rw
+            >
+            <option value="rw">rw</option>
+            <option value="r">r</option>
+            <option value="w">w</option>
+            </select>
+
+            <br/>
+            <input type="submit" value="Submit"/>
+        </form>
         </div>
     }
 }
 
 #[component]
 fn NewMqttNode(cx: Scope) -> impl IntoView {
+    let input_element_ip: NodeRef<Input> = create_node_ref(cx);
+    let input_element_topic: NodeRef<Input> = create_node_ref(cx);
+
+    let select_element_rw: NodeRef<Select> = create_node_ref(cx);
+
+    let input_element_lock_to_uid: NodeRef<Input> = create_node_ref(cx);
+    let input_element_topic_modif: NodeRef<Input> = create_node_ref(cx);
+
+    let on_submit = move |ev: SubmitEvent| {
+        ev.prevent_default();
+
+        let value_ip = input_element_ip.get().expect("<input> to exist").value();
+        let value_topic = input_element_topic.get().expect("<input> to exist").value();
+        let value_lock_to_uid = input_element_lock_to_uid
+            .get()
+            .expect("<input> to exist")
+            .value();
+        let value_topic_modif = input_element_topic_modif
+            .get()
+            .expect("<input> to exist")
+            .value();
+
+        let value_rw = select_element_rw.get().expect("<select> to exist").value();
+        let mut map = HashMap::new();
+        map.insert("mqtt_lock_to_uid", value_lock_to_uid);
+        map.insert("mqtt_ip", value_ip);
+        map.insert("mqtt_topic", value_topic);
+        map.insert("mqtt_rw", value_rw);
+        map.insert("mqtt_topic_modif", value_topic_modif);
+
+        spawn_local(async move {
+            let resp = post_data("http://127.0.0.1:8000/cmqtt", map).await;
+            if resp == "200".to_string() {
+            } else {
+                log!("Error on server side, needs better handler later!");
+            }
+        });
+    };
+
     view! { cx,
-        <div class="new_node">
-            "Mqtt"
+        <div class="new_node_form">
+            <form on:submit=on_submit>
+            "Mqtt lock to uid: "
+            <input type="text"
+            node_ref=input_element_lock_to_uid
+        />
+            <br/>
+
+            "Mqtt IP: "
+            <input type="text"
+                node_ref=input_element_ip
+            />
+
+            <br/>
+
+            "Mb topic: "
+            <input type="text"
+                node_ref=input_element_topic
+            />
+
+            <br/>
+
+            "Mb topic modif: "
+            <input type="text"
+                node_ref=input_element_topic_modif
+            />
+
+            <br/>
+
+            "Mb read/write: "
+            <select
+                node_ref=select_element_rw
+            >
+            <option value="rw">rw</option>
+            <option value="r">r</option>
+            <option value="w">w</option>
+            </select>
+
+            <br/>
+            <input type="submit" value="Submit"/>
+        </form>
         </div>
     }
 }

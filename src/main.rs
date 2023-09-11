@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use bson::DateTime;
 use leptos::ev::SubmitEvent;
 use leptos::html::{Input, Select};
+use leptos::svg::Svg;
 use leptos::*;
 use leptos_router::*;
 use reqwest;
@@ -107,62 +108,113 @@ async fn post_data(url: &str, hmap: HashMap<&str, String>) -> String {
 }
 
 #[component]
+fn NavComponent(
+    cx: Scope,
+    href: String,
+    text_to_show: String,
+    svg_to_use: HtmlElement<Svg>,
+) -> impl IntoView {
+    view! {
+        cx,
+        <a class="flex items-center my-2 px-4 py-2 text-gray-700 transition-colors duration-300 transform rounded-md dark:bg-gray-800 dark:text-gray-200" href={href}>
+        {svg_to_use}
+        <span class="mx-4 font-medium">{text_to_show}</span>
+        </a>
+    }
+}
+
+#[component]
 fn App(cx: Scope) -> impl IntoView {
+    // Svg icon for the home menu point
+    let home_svg = view! {cx,
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+    </svg>};
+
+    // Svg icon for the home menu point
+    let data_svg = view! {cx,
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+    <path d="M22.485,10.975,12,17.267,1.515,10.975A1,1,0,1,0,.486,12.69l11,6.6a1,1,0,0,0,1.03,0l11-6.6a1,1,0,1,0-1.029-1.715Z"/>
+    <path d="M22.485,15.543,12,21.834,1.515,15.543A1,1,0,1,0,.486,17.258l11,6.6a1,1,0,0,0,1.03,0l11-6.6a1,1,0,1,0-1.029-1.715Z"/>
+    <path d="M12,14.773a2.976,2.976,0,0,1-1.531-.425L.485,8.357a1,1,0,0,1,0-1.714L10.469.652a2.973,2.973,0,0,1,3.062,0l9.984,5.991a1,1,0,0,1,0,1.714l-9.984,5.991A2.976,2.976,0,0,1,12,14.773ZM2.944,7.5,11.5,12.633a.974.974,0,0,0,1,0L21.056,7.5,12.5,2.367a.974.974,0,0,0-1,0h0Z"/>
+    </svg>};
+
     view! { cx,
         <Router>
-            <h1>"Data concentrator UI"</h1>
-            <nav>
-                <a href="/">"Home"</a>
-                <a href="/dmap">"Data Map"</a>
-            </nav>
-            <main>
-                <Routes>
-                    <Route path="/" view=|cx| view! { cx,
-                        <h3>"Home"</h3>
-                    }/>
-                    <Route
-                        path="/dmap"
-                        view=|cx| view! { cx, <DataNodeList/> }
-                    >
-                        // if no id specified, fall back
-                        <Route path=":id" view=|cx| view! { cx,
-                            <DataNodeInfo/>
-                        }>
-                            <Route path="" view=|cx| view! { cx,
-                                <DataNodeDesc/>
-                            }/>
-                            <Route path="dnodes" view=|cx| view! { cx,
-                                <DataNodeData/>
-                            }/>
-                            <Route path="newdnode" view=|cx| view! { cx,
-                               <NewDnodeComp/>
-                            }/>
-                        </Route>
-                        // if no id specified, fall back
-                        <Route path="" view=|cx| view! { cx,
-                            <div class="select-dnode">
-                                "Select a data node to view the information."
-                            </div>
-                        }/>
+
+        <main>
+        <div class="">
+
+        <aside class="flex flex-col w-64 float-left h-screen px-4 py-8 overflow-y-auto bg-white border-r rtl:border-r-0 rtl:border-l dark:bg-gray-900 dark:border-gray-700 sticky top-0">
+
+        <div class="relative mt-6">
+            <span class="mx-2 font-medium text-white">"DATA CONCENTRATOR UI"</span>
+
+        </div>
+
+        <div class="flex flex-col justify-between flex-1 mt-6 ">
+                <nav>
+
+                    <NavComponent href="/".to_string() text_to_show="Home".to_string() svg_to_use=home_svg />
+
+                    <NavComponent href="/dmap".to_string() text_to_show="Data Map".to_string() svg_to_use=data_svg />
+                    <hr class="my-6 border-gray-200 dark:border-gray-600" />
+
+
+                </nav>
+
+        </div>
+    </aside>
+        <Routes>
+
+            <Route path="/" view=|cx| view! { cx,
+                <h3>"Home"</h3>
+            }/>
+            <Route
+                path="/dmap"
+                view=DataNodeList
+            >
+                // if no id specified, fall back
+                <Route path=":id" view=DataNodeInfo>
+                    <Route path="" view=DataNodeDesc />
+                    <Route path="dnodes" view=DataNodeData/>
+                    <Route path="newdnode" view=NewDnodeComp/>
+                </Route>
+                // if no id specified, fall back
+                <Route path="" view=|cx| view! { cx,
+                    <div class="select-dnode">
+                        "Select a data node to view the information."
+                    </div>
+                }/>
                     </Route>
                 </Routes>
+                </div>
+
             </main>
-        </Router>
-    }
+
+            </Router>
+
+
+
+        }
 }
 
 #[component]
 fn DataNodeList(cx: Scope) -> impl IntoView {
     view! { cx,
-        <div class="prot-list">
-            // here's our contact list component itself
-            <div class="prot-list-prots">
-                <A href="rapi">"rAPI"</A>
-                <A href="mbtcp">"Modbus TCP"</A>
-                <A href="mqtt">"MQTT"</A>
-            </div>
-
-            <Outlet/>
+        <div class="flex flex-wrap sticky top-0 ">
+          <section class="relative w-[100%] sticky top-0 ">
+            <nav class="flex bg-gray-900 text-white sticky top-0">
+              <div class="px-5 xl:px-12 py-3 flex w-full items-center">
+                <ul class="md:flex px-4 font-semibold font-heading space-x-12">
+                <li><A  class="hover:text-gray-200" href="rapi">"rAPI"</A></li>
+                <li><A  class="hover:text-gray-200" href="mbtcp">"Modbus TCP"</A></li>
+                <li><A  class="hover:text-gray-200" href="mqtt">"MQTT"</A></li>
+                </ul>
+                </div>
+            </nav>
+          </section>
+          <Outlet/>
         </div>
     }
 }
@@ -173,7 +225,7 @@ fn DataNodeInfo(cx: Scope) -> impl IntoView {
     let params = use_params_map(cx);
     let id = move || params.with(|params| params.get("id").cloned().unwrap_or_default());
 
-    let name = move || match id().as_str() {
+    let _name = move || match id().as_str() {
         "rapi" => "REST API",
         "mbtcp" => "Modbus TCP",
         "mqtt" => "MQTT",
@@ -181,16 +233,24 @@ fn DataNodeInfo(cx: Scope) -> impl IntoView {
     };
 
     view! { cx,
-        <div class="dnode-info">
-            <h4>{name}</h4>
-            <div class="tabs">
-                <A href="" exact=true>"Info"</A>
-                <A href="newdnode">"New"</A>
-                <A href="dnodes">"Data nodes"</A>
+            <div class="dnode-info w-[100%] sticky top-12 ">
+            <div class="flex flex-wrap sticky top-12 ">
+              <section class="relative w-[100%]  sticky top-12 ">
+                <nav class="flex bg-gray-600 text-white sticky top-12">
+                  <div class="px-5 xl:px-12 py-3 flex w-full items-center">
+                    <ul class="md:flex px-4 font-semibold font-heading space-x-12">
+                    <li><A  class="hover:text-gray-200" href="">"Info"</A></li>
+                    <li><A  class="hover:text-gray-200" href="newdnode">"New"</A></li>
+                    <li><A  class="hover:text-gray-200" href="dnodes">"Data nodes"</A></li>
+                    </ul>
+                    </div>
+                </nav>
+              </section>
+            </div>
+            <Outlet/>
+
             </div>
 
-            <Outlet/>
-        </div>
     }
 }
 
@@ -340,8 +400,10 @@ fn NewRapiNode(cx: Scope) -> impl IntoView {
     let async_result = move || async_data.read(cx).unwrap_or_else(|| "Loading...".into());
 
     view! { cx,
-        <div class="new_node">
-        <button on:click= move |_| {
+        <div class="new_node m-5 max-w-sm rounded overflow-hidden shadow-lg">
+        <button
+        class="bg-blue-600 hover:bg-blue-900 text-white font-bold py-2 px-4 rounded"
+        on:click= move |_| {
             set_count.update(|n| *n += 1);
         }
         class:btn_disabled=move || { count.get() > 0 }
@@ -350,7 +412,7 @@ fn NewRapiNode(cx: Scope) -> impl IntoView {
           </button>
             <Show
             when=move || { count.get() > 0 }
-            fallback=|_cx| view! { _cx, <p> "Generate new uid to make a new datanode!"</p> }
+            fallback=|_cx| view! { _cx, <p class="text-gray-700 text-base"> "Generate new uid to make a new datanode!"</p> }
           >
             <NewRapiForm uid=async_result() scount=set_count/>
           </Show>
@@ -394,40 +456,105 @@ fn NewRapiForm(cx: Scope, uid: String, scount: WriteSignal<i32>) -> impl IntoVie
     };
 
     view! { cx,
-        <div class="new_node_form">
-            <form on:submit=on_submit>
-            "Generated uid: "
-            <span>{uid} </span>
-            <br/>
+            <div class="new_node_form">
 
-            "Data node name: "
-            <input type="text"
-                node_ref=input_element_name
-            />
+                <form class="w-full max-w-sm p-4"
+                 on:submit=on_submit>
+                 <div class="md:flex md:items-center mb-6">
 
-            <br/>
+                 <div class="md:w-1/3">
+                 <label class="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4" for="uid">
+                 "Generated uid: "
+                </label>
+                 </div>
+                <div class="md:w-2/3">
+                <span
+                class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
+                >
+                {uid}
+                </span>
+                </div>
+                </div>
 
-            "Data node default value: "
-            <input type="text"
-                node_ref=input_element_default_value
-            />
+                <FormInputCust node_ref_cust=input_element_name
+                label_text="Data node name: ".to_string()
+                id_name="name_input".to_string() />
 
-            <br/>
+                <FormInputCust node_ref_cust=input_element_default_value
+                label_text="Data node default value: ".to_string()
+                id_name="value_input".to_string() />
 
-            "Data node read/write: "
-            <select
-                node_ref=select_element_rw
-            >
-            <option value="rw">rw</option>
-            <option value="r">r</option>
-            <option value="w">w</option>
-            </select>
+                <FormSelectCust node_ref_cust=select_element_rw
+                label_text="Data node read/write: ".to_string()
+                id_name="read_write_select".to_string() />
 
-            <br/>
-            <input type="submit" value="Submit"/>
-        </form>
-        </div>
+                <FormSubmitButton />
+            </form>
+            </div>
     }
+}
+
+#[component]
+fn FormSubmitButton(cx: Scope) -> impl IntoView {
+    view! {cx,
+        <input
+        class="shadow bg-green-500 hover:bg-green-400 focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4 rounded m-5"
+        type="submit" value="Submit"/>
+    }
+}
+
+#[component]
+fn FormInputCust(
+    cx: Scope,
+    node_ref_cust: NodeRef<Input>,
+    id_name: String,
+    label_text: String,
+) -> impl IntoView {
+    view! {cx,
+        <div class="md:flex md:items-center mb-6">
+
+          <div class="md:w-1/3">
+          <label class="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4" for={&id_name}>
+          {label_text}
+          </label>
+        </div>
+        <div class="md:w-2/3">
+        <input type="text"
+        id={&id_name}
+        class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
+        node_ref=node_ref_cust
+    />
+    </div>
+    </div>}
+}
+
+#[component]
+fn FormSelectCust(
+    cx: Scope,
+    node_ref_cust: NodeRef<Select>,
+    id_name: String,
+    label_text: String,
+) -> impl IntoView {
+    view! {cx,
+        <div class="md:flex md:items-center mb-6">
+
+          <div class="md:w-1/3">
+          <label class="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4" for={&id_name}>
+          {label_text}
+          </label>
+        </div>
+        <div class="md:w-2/3">
+        <select
+        id={&id_name}
+        class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
+        node_ref=node_ref_cust
+        >
+        <option value="rw">rw</option>
+        <option value="r">r</option>
+        <option value="w">w</option>
+        </select>
+    </div>
+    </div>}
 }
 
 #[component]
@@ -473,48 +600,41 @@ fn NewMbtcpNode(cx: Scope) -> impl IntoView {
     };
 
     view! { cx,
-        <div class="new_node_form">
-            <form on:submit=on_submit>
-            "Mb lock to uid: "
-            <input type="text"
-            node_ref=input_element_lock_to_uid
-        />
-            <br/>
+        <div class="m-5 max-w-sm rounded overflow-hidden shadow-lg">
+        <div class="new_node_form ">
+            <form class="w-full max-w-sm p-4"
+            on:submit=on_submit>
 
-            "Mb IP: "
-            <input type="text"
-                node_ref=input_element_ip
-            />
+            <FormInputCust node_ref_cust=input_element_lock_to_uid
+            label_text="Mb lock to uid: ".to_string()
+            id_name="mb_lock_to_id".to_string() />
 
-            <br/>
+            <FormInputCust node_ref_cust=input_element_ip
+            label_text="Mb IP: ".to_string()
+            id_name="mb_ip".to_string() />
 
-            "Mb port: "
-            <input type="text"
-                node_ref=input_element_port
-            />
 
-            <br/>
+            <FormInputCust node_ref_cust=input_element_port
+            label_text="Mb port: ".to_string()
+            id_name="mb_port".to_string() />
 
-            "Mb register: "
-            <input type="text"
-                node_ref=input_element_register
-            />
 
-            <br/>
 
-            "Mb read/write: "
-            <select
-                node_ref=select_element_rw
-            >
-            <option value="rw">rw</option>
-            <option value="r">r</option>
-            <option value="w">w</option>
-            </select>
+            <FormInputCust node_ref_cust=input_element_register
+            label_text="Mb register: ".to_string()
+            id_name="mb_register".to_string() />
 
-            <br/>
-            <input type="submit" value="Submit"/>
+            <FormSelectCust node_ref_cust=select_element_rw
+            label_text="Mb read/write: ".to_string()
+            id_name="mb_read_write_select".to_string() />
+
+            <FormSubmitButton />
+
+
         </form>
         </div>
+        </div>
+
     }
 }
 

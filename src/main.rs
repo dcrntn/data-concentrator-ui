@@ -116,7 +116,7 @@ fn NavComponent(
 ) -> impl IntoView {
     view! {
         cx,
-        <a class="flex items-center my-2 px-4 py-2 text-gray-700 transition-colors duration-300 transform rounded-md dark:bg-gray-800 dark:text-gray-200" href={href}>
+        <a class="flex items-center my-2 px-4 py-2 dark:text-gray-300 transition-colors duration-300 transform rounded-md dark:bg-gray-800 bg-gray-300 " href={href}>
         {svg_to_use}
         <span class="mx-4 font-medium">{text_to_show}</span>
         </a>
@@ -143,12 +143,12 @@ fn App(cx: Scope) -> impl IntoView {
         <Router>
 
         <main>
-        <div class="">
+        <div class="dark:bg-gray-800 min-h-screen">
 
-        <aside class="flex flex-col w-64 float-left h-screen px-4 py-8 overflow-y-auto bg-white border-r rtl:border-r-0 rtl:border-l dark:bg-gray-900 dark:border-gray-700 sticky top-0">
+        <aside class="flex flex-col w-64 float-left h-screen px-4 py-8 overflow-y-auto bg-gray-200 border-r rtl:border-r-0 rtl:border-l dark:bg-gray-900 dark:border-gray-700 border sticky top-0">
 
         <div class="relative mt-6">
-            <span class="mx-2 font-medium text-white">"DATA CONCENTRATOR UI"</span>
+            <span class="mx-2 font-medium dark:text-gray-300">"DATA CONCENTRATOR UI"</span>
 
         </div>
 
@@ -158,7 +158,7 @@ fn App(cx: Scope) -> impl IntoView {
                     <NavComponent href="/".to_string() text_to_show="Home".to_string() svg_to_use=home_svg />
 
                     <NavComponent href="/dmap".to_string() text_to_show="Data Map".to_string() svg_to_use=data_svg />
-                    <hr class="my-6 border-gray-200 dark:border-gray-600" />
+                    <hr class="my-6 border-gray-900 dark:border-gray-600" />
 
 
                 </nav>
@@ -167,9 +167,7 @@ fn App(cx: Scope) -> impl IntoView {
     </aside>
         <Routes>
 
-            <Route path="/" view=|cx| view! { cx,
-                <h3>"Home"</h3>
-            }/>
+            <Route path="/" view=HomeComponent />
             <Route
                 path="/dmap"
                 view=DataNodeList
@@ -182,7 +180,7 @@ fn App(cx: Scope) -> impl IntoView {
                 </Route>
                 // if no id specified, fall back
                 <Route path="" view=|cx| view! { cx,
-                    <div class="select-dnode">
+                    <div class="select-dnode dark:text-gray-300 m-2 p-5 rounded overflow-hidden shadow-lg border">
                         "Select a data node to view the information."
                     </div>
                 }/>
@@ -200,16 +198,30 @@ fn App(cx: Scope) -> impl IntoView {
 }
 
 #[component]
+fn HomeComponent(cx: Scope) -> impl IntoView {
+    view! {
+        cx,
+        <div class="bg-neutral-50 py-24 px-6 text-center dark:bg-gray-800 h-screen align-middle">
+        <h1 class="mt-2 mb-16 text-5xl dark:text-gray-300 font-bold tracking-tight md:text-6xl xl:text-7xl">
+          A simple UI written in LEPTOS <br />for the <span class="text-blue-300 dark:text-blue-900 mx-4"> DATA CONCENTRATOR </span>software
+        </h1>
+        <a class="mb-2 inline-block rounded text-gray-600 bg-gray-300 dark:bg-gray-600 dark:text-gray-300 px-12 pt-4 pb-3.5 text-sm font-medium uppercase leading-normal transition shadow duration-150 ease-in-out hover:bg-primary-600 focus:bg-primary-600 focus:outline-none focus:ring-0 active:bg-primary-700 md:mr-2 md:mb-0"
+         href="/dmap" role="button">Go to data mapping</a>
+      </div>
+    }
+}
+
+#[component]
 fn DataNodeList(cx: Scope) -> impl IntoView {
     view! { cx,
         <div class="flex flex-wrap sticky top-0 ">
-          <section class="relative w-[100%] sticky top-0 ">
-            <nav class="flex bg-gray-900 text-white sticky top-0">
+          <section class="relative w-[100%] sticky top-0 z-10">
+            <nav class="flex bg-gray-200 dark:bg-gray-900 dark:text-gray-300 boarder sticky top-0 z-10">
               <div class="px-5 xl:px-12 py-3 flex w-full items-center">
                 <ul class="md:flex px-4 font-semibold font-heading space-x-12">
-                <li><A  class="hover:text-gray-200" href="rapi">"rAPI"</A></li>
-                <li><A  class="hover:text-gray-200" href="mbtcp">"Modbus TCP"</A></li>
-                <li><A  class="hover:text-gray-200" href="mqtt">"MQTT"</A></li>
+                <li><A  class="hover:text-gray-500 dark:hover:text-gray-200" href="rapi">"rAPI"</A></li>
+                <li><A  class="hover:text-gray-500 dark:hover:text-gray-200" href="mbtcp">"Modbus TCP"</A></li>
+                <li><A  class="hover:text-gray-500 dark:hover:text-gray-200" href="mqtt">"MQTT"</A></li>
                 </ul>
                 </div>
             </nav>
@@ -235,13 +247,13 @@ fn DataNodeInfo(cx: Scope) -> impl IntoView {
     view! { cx,
             <div class="dnode-info w-[100%] sticky top-12 ">
             <div class="flex flex-wrap sticky top-12 ">
-              <section class="relative w-[100%]  sticky top-12 ">
-                <nav class="flex bg-gray-600 text-white sticky top-12">
+              <section class="relative w-[100%]  sticky top-12">
+                <nav class="flex bg-gray-100 dark:bg-gray-600 dark:text-gray-300 boarder sticky top-12">
                   <div class="px-5 xl:px-12 py-3 flex w-full items-center">
                     <ul class="md:flex px-4 font-semibold font-heading space-x-12">
-                    <li><A  class="hover:text-gray-200" href="">"Info"</A></li>
-                    <li><A  class="hover:text-gray-200" href="newdnode">"New"</A></li>
-                    <li><A  class="hover:text-gray-200" href="dnodes">"Data nodes"</A></li>
+                    <li><A  class="hover:text-gray-500 dark:hover:text-gray-200" href="">"Info"</A></li>
+                    <li><A  class="hover:text-gray-500 dark:hover:text-gray-200" href="newdnode">"New"</A></li>
+                    <li><A  class="hover:text-gray-500 dark:hover:text-gray-200" href="dnodes">"Data nodes"</A></li>
                     </ul>
                     </div>
                 </nav>
@@ -268,7 +280,7 @@ fn DataNodeDesc(cx: Scope) -> impl IntoView {
     };
 
     view! { cx,
-        <div class="contact-info">
+        <div class="default-info dark:text-gray-300 m-2 p-5 rounded overflow-hidden shadow-lg border" >
         <p> {dnode_descr} </p>
         </div>
     }
@@ -318,7 +330,7 @@ fn ShowData(cx: Scope, data: String, id_for_later: &'static str) -> impl IntoVie
             })
             .collect::<Vec<_>>();
         view! { cx,
-            <div>{mapped_view}</div>
+            <div class="grid grid-cols-3 grid-flow-row gap-2">{mapped_view}</div>
         }
     } else if id_for_later == "mqttstuff" {
         let vect_data_mqtt: Vec<MqttStruct> = serde_json::from_str(&data).unwrap();
@@ -331,7 +343,7 @@ fn ShowData(cx: Scope, data: String, id_for_later: &'static str) -> impl IntoVie
             })
             .collect::<Vec<_>>();
         view! { cx,
-            <div>{mapped_view}</div>
+            <div class="grid grid-cols-3 grid-flow-row gap-2">{mapped_view}</div>
         }
     } else if id_for_later == "bucket" {
         let vect_data_rapi: Vec<RapiStruct> = serde_json::from_str(&data).unwrap();
@@ -344,7 +356,7 @@ fn ShowData(cx: Scope, data: String, id_for_later: &'static str) -> impl IntoVie
             })
             .collect::<Vec<_>>();
         view! { cx,
-            <div>{mapped_view}</div>
+            <div class="grid grid-cols-2 grid-flow-row gap-2">{mapped_view}</div>
         }
     } else {
         view! { cx,
@@ -356,25 +368,26 @@ fn ShowData(cx: Scope, data: String, id_for_later: &'static str) -> impl IntoVie
 #[component]
 fn ShowMbSingleData(cx: Scope, mbstruct: ModbusStruct) -> impl IntoView {
     view! { cx,
-        <div class="mb_data_single">
-            <p> "locked to data node: "{mbstruct.mb_lock_to_uid} </p>
-            <p> "mb ip: " {mbstruct.mb_ip} </p>
-            <p> "mb port: " {mbstruct.mb_port} </p>
-            <p> "mb register: " {mbstruct.mb_register} </p>
-            <p> "mb read/write: " {mbstruct.mb_rw} </p>
+        <div class="mb_data_single m-2 p-5 rounded overflow-hidden shadow-lg border">
+            <ShowSingleDataSpan row_desc="MB locked to dNode: ".to_string() data_to_show=mbstruct.mb_lock_to_uid/>
+            <ShowSingleDataSpan row_desc="MB ip: ".to_string() data_to_show=mbstruct.mb_ip/>
+            <ShowSingleDataSpan row_desc="MB port: ".to_string() data_to_show=mbstruct.mb_port/>
+            <ShowSingleDataSpan row_desc="MB register: ".to_string() data_to_show=mbstruct.mb_register/>
+            <ShowSingleDataSpan row_desc="MB read/write: ".to_string() data_to_show=mbstruct.mb_rw/>
         </div>
+
     }
 }
 
 #[component]
 fn ShowMqttSingleData(cx: Scope, mqttstruct: MqttStruct) -> impl IntoView {
     view! { cx,
-        <div class="mqtt_data_single">
-            <p> "locked to data node: "{mqttstruct.mqtt_lock_to_uid} </p>
-            <p> "mqtt ip: " {mqttstruct.mqtt_ip} </p>
-            <p> "mqtt topic: " {mqttstruct.mqtt_topic} </p>
-            <p> "mqtt topic modifier: " {mqttstruct.mqtt_topic_modif} </p>
-            <p> "mqtt read/write: " {mqttstruct.mqtt_rw} </p>
+        <div class="mqtt_data_single m-2 p-5 rounded overflow-hidden shadow-lg border">
+            <ShowSingleDataSpan row_desc="MQTT locked to dNode: ".to_string() data_to_show=mqttstruct.mqtt_lock_to_uid/>
+            <ShowSingleDataSpan row_desc="MQTT ip: ".to_string() data_to_show=mqttstruct.mqtt_ip/>
+            <ShowSingleDataSpan row_desc="MQTT topic: ".to_string() data_to_show=mqttstruct.mqtt_topic/>
+            <ShowSingleDataSpan row_desc="MQTT topic modifier: ".to_string() data_to_show=mqttstruct.mqtt_topic_modif/>
+            <ShowSingleDataSpan row_desc="MQTT read/write: ".to_string() data_to_show=mqttstruct.mqtt_rw/>
         </div>
     }
 }
@@ -382,13 +395,34 @@ fn ShowMqttSingleData(cx: Scope, mqttstruct: MqttStruct) -> impl IntoView {
 #[component]
 fn ShowRapiSingleData(cx: Scope, rapistruct: RapiStruct) -> impl IntoView {
     view! { cx,
-        <div class="rapi_data_single">
-            <p> "Data node uid: " {rapistruct.node_uid} </p>
-            <p> "Data node value: "{rapistruct.node_val} </p>
-            <p> "Data node last updated: " {rapistruct.node_last_update.to_string()} </p>
-            <p> "Data node name: " {rapistruct.node_name} </p>
-            <p> "Data node read/write ? : " {rapistruct.node_rw_direction} </p>
+        <div class="rapi_data_single m-2 p-5 rounded overflow-hidden shadow-lg border">
+            <ShowSingleDataSpan row_desc="Data node uid: ".to_string() data_to_show=rapistruct.node_uid/>
+            <ShowSingleDataSpan row_desc="Data node value: ".to_string() data_to_show=rapistruct.node_val/>
+            <ShowSingleDataSpan row_desc="Data node last updated: ".to_string() data_to_show=rapistruct.node_last_update.to_string()/>
+            <ShowSingleDataSpan row_desc="Data node name: ".to_string() data_to_show=rapistruct.node_name/>
+            <ShowSingleDataSpan row_desc="Data node read/write ? : ".to_string() data_to_show=rapistruct.node_rw_direction/>
         </div>
+    }
+}
+
+#[component]
+fn ShowSingleDataSpan(cx: Scope, row_desc: String, data_to_show: String) -> impl IntoView {
+    view! {cx,
+        <div class="md:flex md:items-center mb-6 ">
+
+            <div class="md:w-1/2">
+                <label class="block dark:text-gray-300 font-bold md:text-right mb-1 md:mb-0 pr-4" for="uid">
+                    {row_desc}
+                </label>
+            </div>
+            <div class="md:w-1/2">
+                <span
+                class="appearance-none dark:text-gray-300 border-2 border-gray-200 rounded w-full py-2 px-2 leading-tight focus:outline-none focus:bg-white focus:border-gray-700"
+                >
+                    {data_to_show}
+                </span>
+            </div>
+       </div>
     }
 }
 
@@ -400,22 +434,25 @@ fn NewRapiNode(cx: Scope) -> impl IntoView {
     let async_result = move || async_data.read(cx).unwrap_or_else(|| "Loading...".into());
 
     view! { cx,
-        <div class="new_node m-5 max-w-sm rounded overflow-hidden shadow-lg">
-        <button
-        class="bg-blue-600 hover:bg-blue-900 text-white font-bold py-2 px-4 rounded"
-        on:click= move |_| {
-            set_count.update(|n| *n += 1);
-        }
-        class:btn_disabled=move || { count.get() > 0 }
-    >
-        "Generate new UID"
-          </button>
+        <div class="new_node m-5 p-5 max-w-sm rounded overflow-hidden shadow-lg border">
+
             <Show
             when=move || { count.get() > 0 }
-            fallback=|_cx| view! { _cx, <p class="text-gray-700 text-base"> "Generate new uid to make a new datanode!"</p> }
+            fallback=|_cx| view! { _cx, <h3 class="dark:text-gray-300 text-base m-3"> "Click on \"Generate new UID\" to make a new datanode!"</h3> }
           >
             <NewRapiForm uid=async_result() scount=set_count/>
           </Show>
+
+          <button
+          class="bg-blue-600 text-gray-200 hover:bg-blue-900 dark:text-gray-300 font-bold py-2 px-4 rounded"
+          on:click= move |_| {
+              set_count.update(|n| *n += 1);
+          }
+          class:btn_disabled=move || { count.get() > 0 }
+      >
+          "Generate new UID"
+        </button>
+
         </div>
     }
 }
@@ -463,13 +500,13 @@ fn NewRapiForm(cx: Scope, uid: String, scount: WriteSignal<i32>) -> impl IntoVie
                  <div class="md:flex md:items-center mb-6">
 
                  <div class="md:w-1/3">
-                 <label class="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4" for="uid">
+                 <label class="block dark:text-gray-300 font-bold md:text-right mb-1 md:mb-0 pr-4" for="uid">
                  "Generated uid: "
                 </label>
                  </div>
                 <div class="md:w-2/3">
                 <span
-                class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
+                class="appearance-none  border-2 border-blue-300 rounded w-full py-2 px-2 dark:text-gray-300 leading-tight focus:outline-none focus:bg-white focus:border-gray-700"
                 >
                 {uid}
                 </span>
@@ -498,7 +535,7 @@ fn NewRapiForm(cx: Scope, uid: String, scount: WriteSignal<i32>) -> impl IntoVie
 fn FormSubmitButton(cx: Scope) -> impl IntoView {
     view! {cx,
         <input
-        class="shadow bg-green-500 hover:bg-green-400 focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4 rounded m-5"
+        class="shadow text-gray-300 bg-green-500 hover:bg-green-400 focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4 rounded m-5"
         type="submit" value="Submit"/>
     }
 }
@@ -514,14 +551,14 @@ fn FormInputCust(
         <div class="md:flex md:items-center mb-6">
 
           <div class="md:w-1/3">
-          <label class="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4" for={&id_name}>
+          <label class="block dark:text-gray-300 font-bold md:text-right mb-1 md:mb-0 pr-4" for={&id_name}>
           {label_text}
           </label>
         </div>
         <div class="md:w-2/3">
         <input type="text"
         id={&id_name}
-        class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
+        class="dark:bg-gray-700 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 dark:text-gray-300 leading-tight focus:bg-gray-200 focus:outline-none dark:focus:bg-gray-500 focus:border-gray-700"
         node_ref=node_ref_cust
     />
     </div>
@@ -539,14 +576,14 @@ fn FormSelectCust(
         <div class="md:flex md:items-center mb-6">
 
           <div class="md:w-1/3">
-          <label class="block text-gray-500 font-bold md:text-right mb-1 md:mb-0 pr-4" for={&id_name}>
+          <label class="block dark:text-gray-300 font-bold md:text-right mb-1 md:mb-0 pr-4" for={&id_name}>
           {label_text}
           </label>
         </div>
         <div class="md:w-2/3">
         <select
         id={&id_name}
-        class="bg-gray-200 appearance-none border-2 border-gray-200 rounded w-full py-2 px-4 text-gray-700 leading-tight focus:outline-none focus:bg-white focus:border-purple-500"
+        class="dark:bg-gray-700 appearance-none dark:text-gray-300 border-2 border-gray-200 rounded w-full py-2 px-4  leading-tight focus:bg-gray-200 focus:outline-none dark:focus:bg-gray-500 focus:border-gray-700"
         node_ref=node_ref_cust
         >
         <option value="rw">rw</option>
@@ -600,7 +637,7 @@ fn NewMbtcpNode(cx: Scope) -> impl IntoView {
     };
 
     view! { cx,
-        <div class="m-5 max-w-sm rounded overflow-hidden shadow-lg">
+        <div class="m-5 p-5 max-w-sm rounded overflow-hidden shadow-lg border">
         <div class="new_node_form ">
             <form class="w-full max-w-sm p-4"
             on:submit=on_submit>
@@ -680,55 +717,48 @@ fn NewMqttNode(cx: Scope) -> impl IntoView {
     };
 
     view! { cx,
+        <div class="m-5 p-5 max-w-sm rounded overflow-hidden shadow-lg border">
+
         <div class="new_node_form">
             <form on:submit=on_submit>
-            "Mqtt lock to uid: "
-            <input type="text"
-            node_ref=input_element_lock_to_uid
-        />
-            <br/>
 
-            "Mqtt IP: "
-            <input type="text"
-                node_ref=input_element_ip
-            />
 
-            <br/>
+            <FormInputCust node_ref_cust=input_element_lock_to_uid
+            label_text="Mqtt lock to uid: ".to_string()
+            id_name="mqtt_lock_to_id".to_string() />
 
-            "Mb topic: "
-            <input type="text"
-                node_ref=input_element_topic
-            />
+            <FormInputCust node_ref_cust=input_element_ip
+            label_text="Mqtt IP: ".to_string()
+            id_name="mqtt_ip".to_string() />
 
-            <br/>
 
-            "Mb topic modif: "
-            <input type="text"
-                node_ref=input_element_topic_modif
-            />
+            <FormInputCust node_ref_cust=input_element_topic
+            label_text="Mqtt topic: ".to_string()
+            id_name="mqtt_port".to_string() />
 
-            <br/>
 
-            "Mb read/write: "
-            <select
-                node_ref=select_element_rw
-            >
-            <option value="rw">rw</option>
-            <option value="r">r</option>
-            <option value="w">w</option>
-            </select>
 
-            <br/>
-            <input type="submit" value="Submit"/>
+            <FormInputCust node_ref_cust=input_element_topic_modif
+            label_text="Mqtt topic modif: ".to_string()
+            id_name="mqtt_register".to_string() />
+
+            <FormSelectCust node_ref_cust=select_element_rw
+            label_text="Mqtt read/write: ".to_string()
+            id_name="mqtt_read_write_select".to_string() />
+
+            <FormSubmitButton />
+
         </form>
         </div>
+        </div>
+
     }
 }
 
 #[component]
 fn NoNewNode(cx: Scope) -> impl IntoView {
     view! { cx,
-        <div class="new_node">
+        <div class="new_node dark:text-gray-300">
             "There are no new nodes for this protocol"
         </div>
     }
